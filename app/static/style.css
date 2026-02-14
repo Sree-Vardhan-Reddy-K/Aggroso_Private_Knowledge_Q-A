@@ -1,0 +1,152 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+    background: #111827;
+    border-bottom: 1px solid #1f2937;
+}
+
+.logo {
+    font-weight: 600;
+    font-size: 18px;
+    color: #facc15;
+}
+
+.nav-status {
+    background: #374151;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.hero {
+    text-align: center;
+    padding: 80px 20px 50px;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+}
+
+.hero h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.hero span {
+    color: #facc15;
+}
+
+.hero p {
+    color: #9ca3af;
+    font-size: 18px;
+}
+
+.app-container {
+    display: flex;
+    padding: 40px;
+    gap: 30px;
+}
+
+.left-panel {
+    width: 30%;
+}
+
+.right-panel {
+    width: 70%;
+}
+
+.card.dark {
+    background: #1f2937;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    border: 1px solid #374151;
+}
+
+h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+}
+
+.btn.gold {
+    background: #facc15;
+    color: black;
+}
+
+.btn.outline {
+    background: transparent;
+    border: 1px solid #facc15;
+    color: #facc15;
+}
+
+.btn.full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+input[type="text"], input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: white;
+}
+
+.query-box {
+    display: flex;
+    gap: 10px;
+}
+
+.answer-box {
+    margin-top: 15px;
+    padding: 15px;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #374151;
+}
+
+.sources-box {
+    margin-top: 15px;
+    padding: 15px;
+    background: #111827;
+    border-radius: 8px;
+    border: 1px solid #374151;
+}
+
+.doc-list {
+    padding-left: 15px;
+}
+
+.loader {
+    margin-top: 10px;
+    border: 4px solid #374151;
+    border-top: 4px solid #facc15;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    animation: spin 1s linear infinite;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Knowledge Workspace</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">AI Workspace</div>
+    <div class="nav-status" id="statusIndicator">Checking...</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <h1>Private Knowledge <span>AI Workspace</span></h1>
+    <p>Upload internal documents. Ask grounded questions. Get explainable answers.</p>
+</section>
+
+<!-- MAIN APP -->
+<section class="app-container">
+
+    <div class="left-panel">
+
+        <div class="card dark">
+            <h3>Upload Documents</h3>
+            <form id="uploadForm">
+                <input type="file" id="files" multiple accept=".txt">
+                <button type="submit" class="btn gold full">Upload & Rebuild</button>
+            </form>
+            <div id="uploadLoader" class="loader hidden"></div>
+            <div id="uploadMessage" class="message hidden"></div>
+        </div>
+
+        <div class="card dark">
+            <h3>Indexed Files</h3>
+            <button onclick="loadDocuments()" class="btn outline full">Refresh</button>
+            <ul id="docList" class="doc-list"></ul>
+        </div>
+
+    </div>
+
+    <div class="right-panel">
+
+        <div class="card dark">
+            <h3>Ask a Question</h3>
+            <div class="query-box">
+                <input type="text" id="question" placeholder="Ask about your uploaded documents...">
+                <button onclick="askQuestion()" class="btn gold">Ask</button>
+            </div>
+
+            <div id="queryLoader" class="loader hidden"></div>
+
+            <div id="answerBox" class="answer-box hidden">
+                <h4>Answer</h4>
+                <div id="answerText"></div>
+            </div>
+
+            <div id="sourcesBox" class="sources-box hidden">
+                <h4>Source Evidence</h4>
+                <div id="sources"></div>
+            </div>
+        </div>
+
+        <div class="card dark">
+            <h3>System Health</h3>
+            <button onclick="checkStatus()" class="btn outline">Check Status</button>
+            <pre id="statusBox"></pre>
+        </div>
+
+    </div>
+
+</section>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
