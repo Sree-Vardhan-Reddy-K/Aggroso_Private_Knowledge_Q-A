@@ -41,6 +41,7 @@ I tested all major flows first locally and then on EC2 to ensure correctness and
 I used:
 
 **Model:** Llama-3.1-8b-instant
+
 **Provider:** Groq API  
 
 I chose Groq because it provides low-latency inference, reliable hosted access, and avoids the need for local GPU infrastructure. It fits well for a lightweight production-style deployment.
