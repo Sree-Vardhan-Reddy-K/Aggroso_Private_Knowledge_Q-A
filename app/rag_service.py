@@ -12,10 +12,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-# ---------------------------------------------------
-# Environment & Setup
-# ---------------------------------------------------
-
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -35,10 +31,6 @@ os.makedirs(os.path.dirname(REGISTRY_PATH), exist_ok=True)
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-
-# ---------------------------------------------------
-# Utilities
-# ---------------------------------------------------
 
 def compute_file_hash(filepath: str) -> str:
     sha256 = hashlib.sha256()
@@ -74,10 +66,7 @@ def load_vectorstore():
 def save_vectorstore(vectorstore):
     vectorstore.save_local(INDEX_DIR)
 
-
-# ---------------------------------------------------
 # Core Logic
-# ---------------------------------------------------
 
 def add_documents(file_paths: List[str]) -> dict:
     registry = load_registry()
@@ -164,8 +153,8 @@ def query_documents(question: str) -> Tuple[str, List[dict]]:
     if not vectorstore:
         raise ValueError("No documents indexed.")
 
-    # Retrieve top 5 relevant chunks
-    retrieved_docs = vectorstore.similarity_search(question, k=5)
+    # Retrieve top 8 relevant chunks
+    retrieved_docs = vectorstore.similarity_search(question, k=8)
 
     if not retrieved_docs:
         return refusal_text, []
@@ -174,12 +163,14 @@ def query_documents(question: str) -> Tuple[str, List[dict]]:
     context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
     system_prompt = (
-        "You are a strict document-grounded assistant.\n"
-        "Answer ONLY using the provided context.\n"
-        "If the answer is not explicitly present in the context,\n"
-        f"respond exactly with: '{refusal_text}'\n"
-        "Do not use external knowledge.\n"
-        "Do not infer beyond the context.\n"
+    "You are a document-grounded assistant.\n"
+    "Answer the question using ONLY the provided context.\n"
+    "You may paraphrase, summarize, and combine relevant information from multiple context sections.\n"
+    "If you feel the question is related to doc but the context does not contain a direct answer, you can infer an answer based on the information available.\n"
+    "If the context contains partial information, answer based on what is available.\n"
+    "Only refuse if the question is clearly unrelated to the context.\n"
+    f"If the context does not contain relevant information, respond exactly with: '{refusal_text}'.\n"
+    "Do not use external knowledge.\n"
     )
 
     response = client.chat.completions.create(
@@ -194,7 +185,7 @@ def query_documents(question: str) -> Tuple[str, List[dict]]:
 
     answer = response.choices[0].message.content.strip()
 
-    # Only suppress sources if explicit refusal
+    # Only suppress the sources if refusal is explicit
     if answer == refusal_text:
         return answer, []
 
