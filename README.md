@@ -9,7 +9,7 @@ This project implements a persistent Retrieval-Augmented Generation (RAG) system
 ## Features
 
 - Home page and Status page
-- Upload one or more `.txt` documents
+- Upload one or more .txt documents
 - Persistent FAISS vector index
 - Duplicate document detection (via SHA256 hash)
 - Ask questions grounded strictly in uploaded documents
@@ -23,7 +23,7 @@ This project implements a persistent Retrieval-Augmented Generation (RAG) system
 ## How It Works
 
 1. **Upload**
-   - Documents are stored in the `uploads/` directory.
+   - Documents are stored in the uploads/ directory.
    - Each file is hashed to prevent duplicate indexing.
    - Text is split into chunks.
    - Chunks are embedded using a sentence-transformer model.
@@ -38,7 +38,7 @@ This project implements a persistent Retrieval-Augmented Generation (RAG) system
 
 3. **Persistence**
    - FAISS index stored on disk.
-   - Document registry stored in `data/documents.json`.
+   - Document registry stored in data/documents.json.
    - Survives restarts and redeployments.
 
 ---
@@ -56,7 +56,7 @@ This project implements a persistent Retrieval-Augmented Generation (RAG) system
 
 ## Environment Variables
 
-- Created a `.env` file:
+- Created a .env file:
 - Used GROQ_API_KEY
 
 ## Running Locally
@@ -90,7 +90,7 @@ Returns:
 - Vector store load status
 - LLM connectivity status
 
-## 📂 Project Structure
+## Project Structure
 
 app/
 api.py
@@ -120,7 +120,7 @@ documents.json
 4. Receive answer with source snippets.
 5. Check system health at `/health`.
 
-## 📌 Live Deployment
+## Live Deployment
 
 Hosted on AWS EC2.
 Live link:
