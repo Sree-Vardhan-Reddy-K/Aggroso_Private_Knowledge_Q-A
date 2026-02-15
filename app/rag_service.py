@@ -1,5 +1,7 @@
 import os
+import re
 import json
+import hashlib
 from typing import List, Tuple
 
 from dotenv import load_dotenv
@@ -10,9 +12,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
+# ---------------------------------------------------
+# Environment & Setup
+# ---------------------------------------------------
+
 load_dotenv()
 
-GROQ_API_KEY=os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not set")
 
@@ -21,33 +27,47 @@ client = Groq(api_key=GROQ_API_KEY)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 INDEX_DIR = os.path.join(BASE_DIR, "faiss_index")
-DOC_REGISTRY_PATH = os.path.join(BASE_DIR, "data", "documents.json")
+REGISTRY_PATH = os.path.join(BASE_DIR, "data", "documents.json")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(INDEX_DIR, exist_ok=True)
-os.makedirs(os.path.dirname(DOC_REGISTRY_PATH), exist_ok=True)
+os.makedirs(os.path.dirname(REGISTRY_PATH), exist_ok=True)
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-
 embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+
+# ---------------------------------------------------
+# Utilities
+# ---------------------------------------------------
+
+def compute_file_hash(filepath: str) -> str:
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(8192):
+            sha256.update(chunk)
+    return sha256.hexdigest()
 
 
 def load_registry():
-    if not os.path.exists(DOC_REGISTRY_PATH):
+    if not os.path.exists(REGISTRY_PATH):
         return []
-    with open(DOC_REGISTRY_PATH, "r") as f:
+    with open(REGISTRY_PATH, "r") as f:
         return json.load(f)
 
 
-def save_registry(docs):
-    with open(DOC_REGISTRY_PATH, "w") as f:
-        json.dump(docs, f, indent=2)
+def save_registry(registry):
+    with open(REGISTRY_PATH, "w") as f:
+        json.dump(registry, f, indent=2)
 
 
 def load_vectorstore():
-    faiss_file = os.path.join(INDEX_DIR, "index.faiss")
-    if os.path.exists(faiss_file):
-        return FAISS.load_local(INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
+    index_file = os.path.join(INDEX_DIR, "index.faiss")
+    if os.path.exists(index_file):
+        return FAISS.load_local(
+            INDEX_DIR,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
     return None
 
 
@@ -55,81 +75,111 @@ def save_vectorstore(vectorstore):
     vectorstore.save_local(INDEX_DIR)
 
 
-def add_documents(file_paths: List[str]) -> int:
-    # Step 1: Save files to uploads already handled in API
+# ---------------------------------------------------
+# Core Logic
+# ---------------------------------------------------
 
-    # Step 2: Get ALL uploaded files
-    all_files = [
-        os.path.join(UPLOAD_DIR, f)
-        for f in os.listdir(UPLOAD_DIR)
-        if f.endswith(".txt")
-    ]
+def add_documents(file_paths: List[str]) -> dict:
+    registry = load_registry()
+    existing_hashes = {doc["hash"] for doc in registry}
 
-    if not all_files:
-        raise ValueError("No documents found in upload directory.")
+    new_documents = []
+    added_files = []
+    skipped_files = []
 
-    documents = []
+    for path in file_paths:
+        file_hash = compute_file_hash(path)
 
-    for path in all_files:
+        if file_hash in existing_hashes:
+            skipped_files.append(os.path.basename(path))
+            continue
+
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             text = f.read()
-            if not text.strip():
-                continue
 
-        doc = Document(
-            page_content=text,
-            metadata={"source": os.path.basename(path)}
+        if not text.strip():
+            continue
+
+        new_documents.append(
+            Document(
+                page_content=text,
+                metadata={"source": os.path.basename(path)}
+            )
         )
-        documents.append(doc)
+
+        added_files.append({
+            "filename": os.path.basename(path),
+            "hash": file_hash
+        })
+
+    if not new_documents:
+        return {
+            "added": [],
+            "skipped": skipped_files
+        }
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500,
         chunk_overlap=100
     )
 
-    splits = splitter.split_documents(documents)
-    if not splits:
-        raise ValueError("Uploaded documents contain no usable text.")
+    splits = splitter.split_documents(new_documents)
 
-    # Step 3: Always rebuild FAISS index from scratch
-    vectorstore = FAISS.from_documents(splits, embeddings)
+    if not splits:
+        return {
+            "added": [],
+            "skipped": skipped_files
+        }
+
+    vectorstore = load_vectorstore()
+
+    if vectorstore:
+        vectorstore.add_documents(splits)
+    else:
+        vectorstore = FAISS.from_documents(splits, embeddings)
 
     save_vectorstore(vectorstore)
 
-    # Step 4: Update registry deterministically
-    registry = [os.path.basename(p) for p in all_files]
+    registry.extend(added_files)
     save_registry(registry)
 
-    return len(file_paths)
-
+    return {
+        "added": [doc["filename"] for doc in added_files],
+        "skipped": skipped_files
+    }
 
 
 def list_documents():
-    return load_registry()
+    registry = load_registry()
+    return [doc["filename"] for doc in registry]
 
 
 def query_documents(question: str) -> Tuple[str, List[dict]]:
+    refusal_text = "The answer is not present in the uploaded documents."
+
     if not question.strip():
-        raise ValueError("Question cannot be empty")
+        raise ValueError("Question cannot be empty.")
 
     vectorstore = load_vectorstore()
     if not vectorstore:
-        raise ValueError("No documents indexed")
+        raise ValueError("No documents indexed.")
 
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
-    retrieved_docs = retriever.invoke(question)
+    # Retrieve top 5 relevant chunks
+    retrieved_docs = vectorstore.similarity_search(question, k=5)
 
     if not retrieved_docs:
-        return "No relevant information found.", []
+        return refusal_text, []
 
-    context = "\n\n".join([d.page_content for d in retrieved_docs])
+    # Build context
+    context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
     system_prompt = (
-        "You are a document assistant. "
-        "Answer only and only using the provided context. "
-        "If the answer is not present, say you cannot find it." 
-        "If the answer is not present in the provided documents, outright say cannot find the information in the provided context"
-        "Reject general questions which are irrelevant from the documents provided, for example - weather today, how to make pizza, does the sun rise east or west etc"
+        "You are a strict document-grounded assistant.\n"
+        "Answer ONLY using the provided context.\n"
+        "If the answer is not explicitly present in the context,\n"
+        f"respond exactly with: '{refusal_text}'\n"
+        "Do not use external knowledge.\n"
+        "Do not infer beyond the context.\n"
     )
 
     response = client.chat.completions.create(
@@ -139,16 +189,38 @@ def query_documents(question: str) -> Tuple[str, List[dict]]:
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
         ],
         temperature=0,
-        max_tokens=800
+        max_tokens=1200
     )
 
     answer = response.choices[0].message.content.strip()
 
+    # Only suppress sources if explicit refusal
+    if answer == refusal_text:
+        return answer, []
+
+    # Build sources
     sources = []
     for doc in retrieved_docs:
+        full_text = doc.page_content.strip()
+        max_chars = 1500
+
+        if len(full_text) <= max_chars:
+            snippet = full_text
+        else:
+            temp = full_text[:max_chars]
+            last_period = max(
+                temp.rfind("."),
+                temp.rfind("?"),
+                temp.rfind("!")
+            )
+            if last_period != -1:
+                snippet = temp[:last_period + 1]
+            else:
+                snippet = temp
+
         sources.append({
             "document": doc.metadata.get("source"),
-            "snippet": doc.page_content[:500]
+            "snippet": snippet.strip()
         })
 
     return answer, sources
@@ -156,18 +228,19 @@ def query_documents(question: str) -> Tuple[str, List[dict]]:
 
 def health_check():
     try:
-        vectorstore = load_vectorstore()
-        llm_status = "ok"
         client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": "Ping"}],
             max_tokens=1
         )
+        llm_status = "ok"
     except Exception:
         llm_status = "error"
 
+    vectorstore_loaded = load_vectorstore() is not None
+
     return {
         "backend": "ok",
-        "vector_store_loaded": bool(vectorstore),
+        "vector_store_loaded": vectorstore_loaded,
         "llm_connection": llm_status
     }

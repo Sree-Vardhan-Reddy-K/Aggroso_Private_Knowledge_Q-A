@@ -34,24 +34,55 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         formData.append("files", files[i]);
     }
 
-    showLoader("uploadLoader");
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-    const res = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-    });
+    const files = document.getElementById('files').files;
+    const messageBox = document.getElementById('uploadMessage');
 
-    hideLoader("uploadLoader");
-
-    if (res.ok) {
-        document.getElementById('uploadMessage').classList.remove("hidden");
-        document.getElementById('uploadMessage').innerText =
-            "Index rebuilt successfully.";
-    } else {
-        alert("Upload failed.");
+    if (files.length === 0) {
+        alert("Please select at least one .txt file.");
+        return;
     }
 
-    loadDocuments();
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    // Reset UI state
+    messageBox.classList.add("hidden");
+    messageBox.innerText = "";
+    showLoader("uploadLoader");
+
+    try {
+        const res = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+
+        hideLoader("uploadLoader");
+
+        if (res.ok) {
+            messageBox.classList.remove("hidden");
+            messageBox.innerText =
+                `Added: ${data.added?.join(", ") || "None"} | skipped: ${data.skipped?.join(", ") || "None"}`;
+        } else {
+            messageBox.classList.remove("hidden");
+            messageBox.innerText = "Upload failed.";
+        }
+
+        loadDocuments();
+
+    } catch (err) {
+        hideLoader("uploadLoader");
+        messageBox.classList.remove("hidden");
+        messageBox.innerText = "Unexpected error occurred.";
+    }
+});
+
 });
 
 async function askQuestion() {
@@ -85,7 +116,11 @@ async function askQuestion() {
     if (data.sources) {
         data.sources.forEach(src => {
             const div = document.createElement('div');
-            div.innerHTML = `<strong>${src.document}</strong><br><small>${src.snippet}</small>`;
+            div.classList.add("source-item");
+            div.innerHTML = `
+                <strong>${src.document}</strong>
+                <div>${src.snippet}</div>
+            `;
             div.style.marginBottom = "12px";
             sourcesDiv.appendChild(div);
         });

@@ -9,13 +9,33 @@
 <!-- NAVBAR -->
 <nav class="navbar">
     <div class="logo">AI Workspace</div>
-    <div class="nav-status" id="statusIndicator">Checking...</div>
+
+    <div style="display:flex; gap:15px; align-items:center;">
+        <a href="/" class="btn outline">Home</a>
+        <a href="/status" class="btn outline">Status</a>
+        <div class="nav-status" id="statusIndicator">Checking...</div>
+    </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
     <h1>Private Knowledge <span>AI Workspace</span></h1>
     <p>Upload internal documents. Ask grounded questions. Get explainable answers.</p>
+    <h3 class="upload-warning">
+        PLEASE UPLOAD .txt FILES ONLY (as mentioned in the assignment)
+    </h3>
+    <div class="steps">
+    <h3>How to Use</h3>
+    <ol>
+        <li>Upload one or more .txt documents.</li>
+        <li>Wait for the index to rebuild.</li>
+        <li>Ask a question related to the uploaded documents.</li>
+        <li>Review the answer and source evidence.</li>
+        <li>When a new file A is uploaded, it shows - "Added:A" ,else if it was already previously uploaded it shows - "Skipped:A" </li>
+
+    </ol>
+</div>
+
 </section>
 
 <!-- MAIN APP -->
@@ -74,5 +94,34 @@
 </section>
 
 <script src="/static/script.js"></script>
+<script>
+async function checkHealth() {
+    try {
+        const response = await fetch("/api/status");
+        const data = await response.json();
+
+        const indicator = document.getElementById("statusIndicator");
+
+        if (data.backend === "ok" && data.llm_connection === "ok") {
+            indicator.innerText = "Healthy";
+            indicator.style.background = "#16a34a";
+            indicator.style.color = "white";
+        } else {
+            indicator.innerText = "Issues";
+            indicator.style.background = "#dc2626";
+            indicator.style.color = "white";
+        }
+
+    } catch (error) {
+        const indicator = document.getElementById("statusIndicator");
+        indicator.innerText = "Offline";
+        indicator.style.background = "#dc2626";
+        indicator.style.color = "white";
+    }
+}
+
+checkHealth();
+</script>
+
 </body>
 </html>

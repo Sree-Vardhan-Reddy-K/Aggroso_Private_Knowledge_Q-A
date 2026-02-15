@@ -31,8 +31,15 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/status")
-def status():
+@app.get("/status", response_class=HTMLResponse)
+async def status_page(request: Request):
+    health = health_check()
+    return templates.TemplateResponse("status.html", {
+        "request": request,
+        "health": health
+    })
+@app.get("/api/status")
+def api_status():
     return health_check()
 
 
@@ -59,9 +66,8 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
         saved_paths.append(file_path)
 
-    count = add_documents(saved_paths)
-
-    return {"status": "success", "files_indexed": count}
+    result = add_documents(saved_paths)
+    return result
 
 
 @app.post("/query")

@@ -150,3 +150,67 @@ input[type="text"], input[type="file"] {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.sources-box .source-item {
+    max-height: 180px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 10px;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    margin-bottom: 12px;
+}
+
+.source-item {
+    background: #0b1220;
+    border: 1px solid #2c3e50;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.source-item strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #facc15;
+    font-size: 14px;
+}
+
+.upload-warning {
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #dc2626;
+    letter-spacing: 0.5px;
+}
+
+.steps {
+    margin-top: 25px;
+    text-align: left;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.steps h3 {
+    color: #2563eb;
+    font-size: 22px;
+    margin-bottom: 18px;
+}
+
+.steps ol {
+    display: inline-block;
+    text-align: left;
+    list-style-position: inside;
+    font-size: 17px;
+    line-height: 1.9;
+    padding-left: 22px;
+}
+
+.steps li {
+    margin-bottom: 10px;
+}

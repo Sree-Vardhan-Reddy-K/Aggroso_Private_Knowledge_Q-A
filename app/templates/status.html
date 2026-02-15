@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Status</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">AI Workspace</div>
+    <div>
+        <a href="/" class="btn outline">Home</a>
+    </div>
+</div>
+
+<div class="app-container">
+    <div class="card dark" style="width:100%;">
+        <h2>System Health</h2>
+
+        <div class="status-item">
+            <strong>Backend:</strong> {{ health.backend }}
+        </div>
+
+        <div class="status-item">
+            <strong>Vector Store Loaded:</strong> {{ health.vector_store_loaded }}
+        </div>
+
+        <div class="status-item">
+            <strong>LLM Connection:</strong> {{ health.llm_connection }}
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
